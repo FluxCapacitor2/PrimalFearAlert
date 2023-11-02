@@ -1,0 +1,8 @@
+{
+  "$schema": "../CTAutoComplete/schema.json",
+  "name": "PrimalFearAlert",
+  "author": "FluxCapacitor2",
+  "entry": "index.js",
+  "version": "0.0.1",
+  "description": "Notifies you when your Primal Fear cooldown is ready"
+}
