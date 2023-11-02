@@ -11,11 +11,18 @@ const defaultConfig = {
   text: true,
   fear: 0,
   estimatedTime: 0,
+  sentWelcomeMessage: false,
 };
 
 let config = readConfig();
 let estimatedTime = config.estimatedTime ?? 0;
 let fear = config.fear ?? 0;
+
+if (!config.sentWelcomeMessage) {
+  sendHelpMessage();
+  config.sentWelcomeMessage = true;
+  writeConfig();
+}
 
 const display = new Display({
   renderX: config.x,
@@ -28,6 +35,10 @@ const fearRegex = /Fear: (\d+)/gi;
 
 // This handler runs once per second
 register("step", () => {
+  display.shouldRender = isInSkyBlock() && config.text;
+  if (!isInSkyBlock()) {
+    return;
+  }
   let found = false;
   TabList.getNames().forEach((text, index) => {
     const line = ChatLib.removeFormatting(text).trim();
@@ -107,11 +118,19 @@ register("command", (...args) => {
     config.text = !config.text;
     display.shouldRender = config.text;
   } else {
+    sendHelpMessage();
     return;
   }
   ChatLib.chat("§a✓ §7Configuration updated!");
   writeConfig();
-}).setName("primalfearalert");
+})
+  .setTabCompletions((args) => {
+    if (args.length === 1) {
+      return ["x", "y", "display", "help"];
+    }
+    return [];
+  })
+  .setName("primalfearalert");
 
 // Reset estimate when a Primal Fear is found
 register("chat", () => {
@@ -132,6 +151,24 @@ register("chat", () => {
 register("renderOverlay", () => {
   display.setLine(1, "§8 Fear: " + fear);
 });
+
+function isInSkyBlock() {
+  return Scoreboard.getTitle()?.removeFormatting().includes("SKYBLOCK");
+}
+
+function sendHelpMessage() {
+  const version = JSON.parse(FileLib.read(moduleName, "metadata.json")).version;
+  ChatLib.chat(
+    "§c§lPrimalFearAlert §r§7v" + version + "§r§a by FluxCapacitor2"
+  );
+  ChatLib.chat(
+    "§6/primalfearalert x <number> §8- §7Update the overlay's horizontal position"
+  );
+  ChatLib.chat(
+    "§6/primalfearalert y <number> §8- §7Update the overlay's vertical position"
+  );
+  ChatLib.chat("§6/primalfearalert text §8- §7Toggle the overlay");
+}
 
 function playAlert() {
   ChatLib.chat("§6§lPrimal Fear Ready!");
