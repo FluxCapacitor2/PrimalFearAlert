@@ -9,10 +9,13 @@ const defaultConfig = {
   x: 8,
   y: 8,
   text: true,
+  fear: 0,
+  estimatedTime: 0,
 };
 
 let config = readConfig();
-let estimatedTime = 0;
+let estimatedTime = config.estimatedTime ?? 0;
+let fear = config.fear ?? 0;
 
 const display = new Display({
   renderX: config.x,
@@ -20,7 +23,8 @@ const display = new Display({
   shouldRender: config.text,
 });
 
-const regex = /Primal Fears: ((\d{1,2})m )?(\d{1,2})s/gi;
+const countdownRegex = /Primal Fears: ((\d{1,2})m )?(\d{1,2})s/gi;
+const fearRegex = /Fear: (\d+)/gi;
 
 // This handler runs once per second
 register("step", () => {
@@ -36,43 +40,54 @@ register("step", () => {
       }
 
       // Parse the line and create an estimated timestamp
-      const parsed = regex.exec(line);
+      const parsed = countdownRegex.exec(line);
       if (parsed !== null && parsed.length === 4) {
         const [_, __, minutes, seconds] = parsed;
         estimatedTime =
           java.lang.System.currentTimeMillis() +
           (minutes ?? 0) * 60 * 1000 +
           seconds * 1000;
+        config.estimatedTime = estimatedTime;
+        writeConfig();
       }
 
       display.setLine(0, text.trim());
       wasReady = ready;
     }
+
+    if (line.includes("Fear: ")) {
+      const result = fearRegex.exec(line);
+      if (result && result.length === 2) {
+        fear = parseInt(result[1]);
+      }
+      config.fear = fear;
+      writeConfig();
+    }
   });
   if (!found) {
     const currentTime = java.lang.System.currentTimeMillis();
     // Use an estimate, if available
-    if (estimatedTime > currentTime + 60_000) {
+    if (estimatedTime > currentTime) {
       const diff = Math.round((estimatedTime - currentTime) / 1000);
       const minutes = Math.floor(diff / 60);
       const seconds = diff % 60;
       if (minutes > 0) {
         display.setLine(
           0,
-          `§cPrimal Fears§7: §6${minutes}m ${seconds}s §7(Estimated)`
+          `§c Primal Fears§7: §6${minutes}m ${seconds}s §7(Estimated)`
         );
       } else {
-        display.setLine(0, `§cPrimal Fears§7: §6${seconds}s §7(Estimated)`);
+        display.setLine(0, `§c Primal Fears§7: §6${seconds}s §7(Estimated)`);
       }
     } else {
       // If no estimate is available, clear the display
-      display.setLine(0, "");
+      display.setLine(0, "§c Primal Fears§7: §6§lREADY!! §7(Estimated)");
     }
 
     // Play the alert when the Primal Fear is estimated to be ready
     if (estimatedTime && estimatedTime > 0 && estimatedTime < currentTime) {
       if (!wasReady) {
-        display.setLine(0, `§c§lPrimal Fears§7: §6§lREADY!! §r§7(Estimated)`);
+        display.setLine(0, `§c§l Primal Fears§7: §6§lREADY!! §r§7(Estimated)`);
         wasReady = true;
         playAlert();
       }
@@ -100,10 +115,23 @@ register("command", (...args) => {
 
 // Reset estimate when a Primal Fear is found
 register("chat", () => {
-  estimatedTime = 0;
+  if (fear > 0) {
+    // Primal Fear cooldown starts at six minutes, minus three seconds for every 1 fear that the player has.
+    // https://hypixel.net/threads/october-31-great-spook-event-post-patch-fixes.5528781/
+    estimatedTime =
+      java.lang.System.currentTimeMillis() + 6 * 60_000 - 3_000 * fear;
+  } else {
+    estimatedTime = 0;
+  }
+  config.estimatedTime = estimatedTime;
+  writeConfig();
 })
-  .setCriteria("§r§5§lFEAR. §r§eA §r§dPrimal Fear §r§ehas been summoned!§r")
+  .setCriteria("FEAR. A Primal Fear has been summoned!")
   .setContains();
+
+register("renderOverlay", () => {
+  display.setLine(1, "§8 Fear: " + fear);
+});
 
 function playAlert() {
   ChatLib.chat("§6§lPrimal Fear Ready!");
