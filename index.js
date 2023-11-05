@@ -4,6 +4,7 @@
 let wasReady = false;
 
 const moduleName = "PrimalFearAlert";
+const version = "0.0.1";
 
 const defaultConfig = {
   x: 8,
@@ -157,7 +158,6 @@ function isInSkyBlock() {
 }
 
 function sendHelpMessage() {
-  const version = JSON.parse(FileLib.read(moduleName, "metadata.json")).version;
   ChatLib.chat(
     "§c§lPrimalFearAlert §r§7v" + version + "§r§a by FluxCapacitor2"
   );
@@ -167,7 +167,7 @@ function sendHelpMessage() {
   ChatLib.chat(
     "§6/primalfearalert y <number> §8- §7Update the overlay's vertical position"
   );
-  ChatLib.chat("§6/primalfearalert text §8- §7Toggle the overlay");
+  ChatLib.chat("§6/primalfearalert display §8- §7Toggle the overlay");
 }
 
 function playAlert() {
@@ -177,8 +177,8 @@ function playAlert() {
 }
 
 function readConfig() {
-  const contents = FileLib.read(moduleName, "config.json");
   try {
+    const contents = FileLib.read(moduleName, "config.json");
     return JSON.parse(contents) ?? defaultConfig;
   } catch (e) {
     return defaultConfig;
@@ -186,5 +186,12 @@ function readConfig() {
 }
 
 function writeConfig() {
-  FileLib.write(moduleName, "config.json", JSON.stringify(config));
+  try {
+    FileLib.write(moduleName, "config.json", JSON.stringify(config));
+  } catch (e) {
+    ChatLib.chat(
+      "§cThere are an error saving PrimalFearAlert configuration: " +
+        JSON.stringify(e)
+    );
+  }
 }

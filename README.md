@@ -12,8 +12,9 @@ A ChatTriggers module for Hypixel Skyblock to keep track of your next Primal Fea
 
 1. Download this repository as a zip file by clicking [this link](https://github.com/FluxCapacitor2/PrimalFearAlert/archive/refs/heads/main.zip).
 2. Unzip the folder.
-3. Place it in your `.minecraft/config/ChatTriggers/modules/` folder.
-4. Restart your game or type `/ct reload`.
+3. Rename the folder to `PrimalFearAlert` (remove the `-main` suffix).
+4. Place it in your `.minecraft/config/ChatTriggers/modules/` folder.
+5. Restart your game or type `/ct reload`.
 
 ## Configuration
 
